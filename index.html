@@ -110,7 +110,7 @@ function showResult() {
 }
 
 async function updateRanking(name, score) {
-    const mode = new URLSearchParams(window.location.search).get('mode') || "community";
+    const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
     
     // 1. 送信 (POST)
     await fetch(GAS_URL, {
