@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>周波数当てゲーム - Professional Edition</title>
+    <title>周波数当てゲーム - Ranking Edition</title>
     <style>
         :root {
             --bg-color: #1a1a1a;
             --panel-color: #2d2d2d;
             --accent-blue: #00d4ff;
-            --accent-red: #ff4757;
             --text-color: #e0e0e0;
         }
         body {
@@ -19,12 +18,12 @@
             margin: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
+            align-items: flex-start; /* スクロールできるように上揃え */
+            min-height: 100vh;
+            padding: 20px 0;
         }
         #game-container {
-            width: 100%;
+            width: 90%;
             max-width: 400px;
             background: var(--panel-color);
             padding: 20px;
@@ -33,92 +32,27 @@
             text-align: center;
             position: relative;
         }
-        h1 { font-size: 20px; color: var(--accent-blue); margin-bottom: 20px; }
+        h1 { font-size: 20px; color: var(--accent-blue); }
         .screen { display: none; }
         #startScreen { display: block; }
-        
-        /* 入力エリア */
-        input[type="text"] {
-            width: 80%;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-            border: none;
-            background: #444;
-            color: white;
-            text-align: center;
-        }
-
-        /* スライダー */
+        input[type="text"] { width: 80%; padding: 10px; margin-bottom: 20px; border-radius: 5px; border: none; background: #444; color: white; text-align: center; }
         .slider-container { margin: 30px 0; }
-        input[type="range"] {
-            width: 100%;
-            height: 15px;
-            border-radius: 5px;
-            background: #444;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: var(--accent-blue);
-            cursor: pointer;
-        }
-
-        /* ボタン */
-        button {
-            background: var(--accent-blue);
-            color: black;
-            border: none;
-            padding: 12px 30px;
-            font-weight: bold;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: 0.3s;
-        }
-        button:active { transform: scale(0.95); }
-
-        /* カウントダウン・オーバーレイ */
-        #countdownOverlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-size: 80px;
-            font-weight: bold;
-            color: var(--accent-blue);
-            border-radius: 15px;
-            z-index: 10;
-        }
-
-        /* アナライザーとグラフ */
-        canvas {
-            width: 100%;
-            background: black;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-        #graph { height: 150px; background: #eee; }
-
-        /* ランク表示 */
+        input[type="range"] { width: 100%; height: 15px; border-radius: 5px; background: #444; outline: none; -webkit-appearance: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 25px; height: 25px; border-radius: 50%; background: var(--accent-blue); cursor: pointer; }
+        button { background: var(--accent-blue); color: black; border: none; padding: 12px 30px; font-weight: bold; border-radius: 25px; cursor: pointer; margin: 5px; }
+        #countdownOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; font-size: 80px; color: var(--accent-blue); border-radius: 15px; z-index: 100; }
+        canvas { width: 100%; background: black; border-radius: 10px; }
+        
+        /* ランキング表示用 */
+        #rankingBox { margin-top: 30px; padding-top: 20px; border-top: 1px solid #444; text-align: left; }
+        .ranking-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #333; font-size: 14px; }
         .rank-badge { font-size: 32px; font-weight: bold; margin: 10px 0; }
-        .s-rank { color: #f1c40f; text-shadow: 0 0 10px rgba(241,196,15,0.5); }
-        .a-rank { color: #e74c3c; }
-        .b-rank { color: #3498db; }
-        .c-rank { color: #95a5a6; }
+        .s-rank { color: #f1c40f; } .a-rank { color: #e74c3c; } .b-rank { color: #3498db; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <!-- スタート画面 -->
     <div id="startScreen" class="screen">
         <h1>HEARING TEST PRO</h1>
         <p>名前を入力してスタート</p>
@@ -127,7 +61,6 @@
         <button onclick="startGame()">GAME START</button>
     </div>
 
-    <!-- ゲーム画面 -->
     <div id="gameScreen" class="screen">
         <div id="question" style="font-weight: bold; margin-bottom: 10px;"></div>
         <canvas id="analyzerCanvas" height="100"></canvas>
@@ -138,24 +71,25 @@
         <button onclick="submitAnswer()">決定</button>
     </div>
 
-    <!-- 結果画面 -->
     <div id="resultScreen" class="screen">
         <h2>RESULT</h2>
         <div id="rankText" class="rank-badge"></div>
         <p id="resultText"></p>
-        <canvas id="graph" width="400" height="150"></canvas>
-        <button onclick="copyToClipboard()" style="background: #27ae60; color: white; margin-bottom: 10px;">結果をコピー</button>
-        <div id="copyStatus" style="font-size: 12px; height: 15px; margin-bottom: 10px; color: #27ae60;"></div>
+        <canvas id="graph" width="400" height="150" style="background:#eee;"></canvas>
         <br>
+        <button onclick="copyToClipboard()" style="background:#27ae60;color:white;">結果をコピー</button>
         <button onclick="resetGame()">もう一度プレイ</button>
+
+        <div id="rankingBox">
+            <h3 style="color:var(--accent-blue); font-size:16px;">🏆 TOP 20 RANKING</h3>
+            <div id="rankingList">読み込み中...</div>
+        </div>
     </div>
 
-    <!-- カウントダウン用 -->
     <div id="countdownOverlay"></div>
 </div>
 
 <script>
-// --- 設定：あなたのGASのURL ---
 const GAS_URL = "https://script.google.com/macros/s/AKfycby7HQF0uK34YGYGZp3C-Q25Nthmsj44HBVVOSW7bA-uWp8XtbAqnHA3oUZK6UXNvMtfZg/exec";
 
 let audioCtx, analyser, gainNode, dataArray;
@@ -163,11 +97,9 @@ let correctFreq = 0, questionIndex = 0, totalError = 0;
 const totalQuestions = 3;
 let results = [];
 
-function updateSlider() {
-    document.getElementById("freqValue").innerText = document.getElementById("slider").value;
-}
+function updateSlider() { document.getElementById("freqValue").innerText = document.getElementById("slider").value; }
 
-function initAudio() {
+function startGame() {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioCtx.createAnalyser();
@@ -177,10 +109,6 @@ function initAudio() {
         gainNode.connect(analyser);
         dataArray = new Uint8Array(analyser.frequencyBinCount);
     }
-}
-
-function startGame() {
-    initAudio();
     if (audioCtx.state === 'suspended') audioCtx.resume();
     document.getElementById("startScreen").style.display = "none";
     document.getElementById("gameScreen").style.display = "block";
@@ -192,26 +120,16 @@ function nextQuestion() {
     correctFreq = Math.floor(Math.random() * 1900 + 50);
     questionIndex++;
     document.getElementById("question").innerText = `第 ${questionIndex} 問 / ${totalQuestions}`;
-    startCountdown();
-}
-
-function startCountdown() {
     let count = 3;
     const overlay = document.getElementById("countdownOverlay");
-    overlay.innerHTML = `<div style="font-size: 40px; margin-bottom: 10px;">第 ${questionIndex} 問</div>`;
+    overlay.innerHTML = `<div style="font-size:30px;">第 ${questionIndex} 問</div>`;
     overlay.style.display = "flex";
-
     setTimeout(() => {
         overlay.innerText = count;
         const interval = setInterval(() => {
             count--;
-            if (count <= 0) {
-                clearInterval(interval);
-                overlay.style.display = "none";
-                playTone();
-            } else {
-                overlay.innerText = count;
-            }
+            if (count <= 0) { clearInterval(interval); overlay.style.display = "none"; playTone(); }
+            else { overlay.innerText = count; }
         }, 1000);
     }, 1000);
 }
@@ -231,21 +149,16 @@ function drawAnalyzer() {
     const canvas = document.getElementById("analyzerCanvas");
     const ctx = canvas.getContext("2d");
     analyser.getByteTimeDomainData(dataArray);
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "#00d4ff";
-    ctx.beginPath();
+    ctx.fillStyle = "black"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2; ctx.strokeStyle = "#00d4ff"; ctx.beginPath();
     const sliceWidth = canvas.width / dataArray.length;
     let x = 0;
     for (let i = 0; i < dataArray.length; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = v * canvas.height / 2;
+        const v = dataArray[i] / 128.0; const y = v * canvas.height / 2;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         x += sliceWidth;
     }
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
+    ctx.lineTo(canvas.width, canvas.height / 2); ctx.stroke();
 }
 
 function submitAnswer() {
@@ -262,65 +175,52 @@ function showResult() {
     const avgError = Math.round(totalError / totalQuestions);
     const name = document.getElementById("playerName").value || "名無し";
     
-    let rank = "", rankName = "", rankClass = "";
-    if (avgError < 50) { rank = "S"; rankName = "神の耳"; rankClass = "s-rank"; }
-    else if (avgError < 150) { rank = "A"; rankName = "プロ級"; rankClass = "a-rank"; }
-    else if (avgError < 350) { rank = "B"; rankName = "セミプロ"; rankClass = "b-rank"; }
-    else { rank = "C"; rankName = "一般人"; rankClass = "c-rank"; }
+    let rank = "", rankName = "";
+    if (avgError < 50) { rank = "S"; rankName = "神の耳"; }
+    else if (avgError < 150) { rank = "A"; rankName = "プロ級"; }
+    else { rank = "B"; rankName = "一般人"; }
 
-    const rankEl = document.getElementById("rankText");
-    rankEl.innerText = `${rank} [${rankName}]`;
-    rankEl.className = rankClass;
+    document.getElementById("rankText").innerText = `${rank} [${rankName}]`;
     document.getElementById("resultText").innerText = `${name}さんの平均誤差: ${avgError} Hz`;
     
     drawGraph();
-    sendScoreToGAS(name, avgError);
+    sendAndFetchRanking(name, avgError);
 }
 
-function sendScoreToGAS(name, score) {
+function sendAndFetchRanking(name, score) {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode') || "community";
-    const data = { name: name, score: score, mode: mode };
-
+    
+    // スコア送信（POST）
     fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
-        body: JSON.stringify(data)
-    }).catch(e => console.error(e));
-}
-
-function copyToClipboard() {
-    const name = document.getElementById("playerName").value || "名無し";
-    const avgError = Math.round(totalError / totalQuestions);
-    let resultStr = `🎧 【周波数当てゲーム】 🎧\n👤 プレイヤー: ${name} さん\n📊 平均誤差: ${avgError} Hz\n遊んだURL: ${window.location.href.split('?')[0]}`;
-    navigator.clipboard.writeText(resultStr).then(() => {
-        document.getElementById("copyStatus").innerText = "✅ コピー完了！";
+        body: JSON.stringify({ name: name, score: score, mode: mode })
     });
+
+    // ランキング取得（GET）
+    // 本来はGAS側にGET処理も必要ですが、まずは簡易的に「送信」を確認してください。
+    document.getElementById("rankingList").innerText = "スコア送信中... (スプレッドシートを確認してください)";
 }
 
 function drawGraph() {
     const canvas = document.getElementById("graph");
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    const margin = 40, h = canvas.height - margin * 2, w = canvas.width - margin * 2;
-    const maxFreq = 2200;
-    const barWidth = (w / results.length) / 3.5;
-
     results.forEach((r, i) => {
-        const baseX = margin + i * (w / results.length) + 10;
-        const h1 = (r.correct / maxFreq) * h, y1 = canvas.height - margin - h1;
-        ctx.fillStyle = "#ff4757"; ctx.fillRect(baseX, y1, barWidth, h1);
-        const h2 = (r.answer / maxFreq) * h, y2 = canvas.height - margin - h2;
-        ctx.fillStyle = "#00d4ff"; ctx.fillRect(baseX + barWidth, y2, barWidth, h2);
-        ctx.fillStyle = "#333"; ctx.font = "10px sans-serif";
-        ctx.fillText(`Q${i+1}`, baseX + barWidth, canvas.height - 10);
+        const baseX = 50 + i * 100;
+        ctx.fillStyle = "#ff4757"; ctx.fillRect(baseX, canvas.height-40-(r.correct/20), 20, r.correct/20);
+        ctx.fillStyle = "#00d4ff"; ctx.fillRect(baseX+25, canvas.height-40-(r.answer/20), 20, r.answer/20);
     });
 }
 
-function resetGame() {
-    location.reload();
+function copyToClipboard() {
+    const avgError = Math.round(totalError / totalQuestions);
+    const text = `🎧 周波数当てゲーム結果\n平均誤差: ${avgError}Hz\nURL: ${window.location.href.split('?')[0]}`;
+    navigator.clipboard.writeText(text).then(() => alert("コピーしました！"));
 }
-</script>
 
+function resetGame() { location.reload(); }
+</script>
 </body>
 </html>
