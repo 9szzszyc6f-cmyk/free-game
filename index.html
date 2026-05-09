@@ -2,46 +2,117 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>周波数当てゲーム - Auto Ranking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>周波数当てゲーム - Professional Ranking</title>
     <style>
-        :root { --bg: #1a1a1a; --panel: #2d2d2d; --blue: #00d4ff; --text: #e0e0e0; }
-        body { font-family: sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; min-height: 100vh; padding: 20px 0; }
-        #container { width: 90%; max-width: 400px; background: var(--panel); padding: 20px; border-radius: 15px; text-align: center; }
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-color: #2d2d2d;
+            --accent-blue: #00d4ff;
+            --accent-red: #ff4757;
+            --text-color: #e0e0e0;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        #container {
+            width: 90%;
+            max-width: 400px;
+            background: var(--panel-color);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        h1 { font-size: 20px; color: var(--accent-blue); margin-bottom: 20px; }
         .screen { display: none; }
-        input[type="text"] { width: 80%; padding: 10px; margin: 10px 0; background: #444; color: #fff; border: none; border-radius: 5px; }
-        button { background: var(--blue); border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; margin: 5px; }
-        canvas { width: 100%; background: #000; border-radius: 10px; margin: 10px 0; }
-        #rankingBox { margin-top: 30px; border-top: 1px solid #444; text-align: left; padding-top: 10px; }
-        .rank-item { display: flex; justify-content: space-between; font-size: 14px; padding: 5px 0; border-bottom: 1px solid #333; }
-        #countdownOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; font-size: 60px; color: var(--blue); z-index: 100; }
+        
+        input[type="text"] {
+            width: 80%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: none; background: #444; color: white; text-align: center; font-size: 16px;
+        }
+
+        .slider-container { margin: 20px 0; }
+        .label-text { font-size: 14px; color: var(--accent-blue); margin-bottom: 5px; }
+
+        input[type="range"] {
+            width: 100%; height: 10px; border-radius: 5px; background: #444; outline: none; -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-blue); cursor: pointer;
+        }
+
+        button {
+            background: var(--accent-blue); color: black; border: none; padding: 12px 25px; font-weight: bold; border-radius: 25px; cursor: pointer; font-size: 15px; margin: 5px; transition: 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+        .secondary-btn { background: #555; color: white; }
+
+        canvas { width: 100%; background: black; border-radius: 10px; margin: 10px 0; }
+        #graph { height: 150px; background: #eee; border-radius: 10px; }
+
+        .rank-badge { font-size: 32px; font-weight: bold; margin: 15px 0; }
+        .s-rank { color: #f1c40f; } .a-rank { color: #e74c3c; } .b-rank { color: #3498db; } .c-rank { color: #95a5a6; }
+
+        #rankingBox { margin-top: 30px; border-top: 1px solid #444; text-align: left; padding-top: 20px; }
+        .rank-item { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; border-bottom: 1px solid #333; }
+
+        #countdownOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95);
+            display: none; flex-direction: column; justify-content: center; align-items: center; font-size: 80px; font-weight: bold; color: var(--accent-blue); z-index: 1000;
+        }
     </style>
 </head>
 <body>
 
 <div id="container">
     <div id="startScreen" class="screen" style="display:block;">
-        <h1>HEARING TEST</h1>
+        <h1>HEARING TEST PRO</h1>
         <input type="text" id="playerName" placeholder="名前を入力" maxlength="10">
-        <button onclick="startGame()">START</button>
+        <div class="slider-container" style="text-align: left;">
+            <div class="label-text">初期音量設定</div>
+            <input type="range" id="startVol" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <button onclick="startGame()">GAME START</button>
     </div>
 
     <div id="gameScreen" class="screen">
-        <div id="qNum"></div>
+        <div id="qNum" style="font-weight: bold; color: var(--accent-blue);"></div>
         <canvas id="analyzer" height="100"></canvas>
-        <div style="font-size:24px; margin:10px;"><span id="freqVal">1000</span>Hz</div>
-        <input type="range" id="slider" min="50" max="2000" value="1000" style="width:100%;" oninput="document.getElementById('freqVal').innerText=this.value">
-        <button onclick="submitAnswer()">決定</button>
+        
+        <div class="slider-container">
+            <button class="secondary-btn" id="replayBtn" onclick="playTone()">🔊 もう一度聞く</button>
+            <div style="margin-top:10px;">
+                <div class="label-text">音量調整</div>
+                <input type="range" id="volSlider" min="0" max="1" step="0.1" value="0.5" oninput="updateVolume(this.value)">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="label-text">予想周波数をセット</div>
+            <div style="font-size: 24px; margin-bottom: 10px;"><span id="freqVal">1000</span> Hz</div>
+            <input type="range" id="slider" min="50" max="2000" value="1000" oninput="document.getElementById('freqVal').innerText=this.value">
+        </div>
+        <button onclick="submitAnswer()">解答を決定</button>
     </div>
 
     <div id="resultScreen" class="screen">
         <h2>RESULT</h2>
-        <div id="resultText" style="font-size:20px; margin-bottom:10px;"></div>
-        <button onclick="copyToClipboard()">結果をコピー</button>
-        <button onclick="location.reload()">もう一度</button>
-        
+        <div id="rankText" class="rank-badge"></div>
+        <div id="resultText" style="font-size:18px; margin-bottom:15px;"></div>
+        <canvas id="graph" width="400" height="150"></canvas>
+        <div style="margin-top:20px;">
+            <button onclick="copyToClipboard()" style="background:#27ae60; color:white;">結果をコピー</button>
+            <button onclick="location.reload()" style="background:#444; color:white;">もう一度</button>
+        </div>
         <div id="rankingBox">
-            <h3 style="color:var(--blue)">🏆 TOP 20 RANKING</h3>
+            <h3 style="color:var(--accent-blue); font-size:16px;">🏆 TOP 20 RANKING</h3>
             <div id="rankingList">読み込み中...</div>
         </div>
     </div>
@@ -52,19 +123,34 @@
 <script>
 const GAS_URL = "https://script.google.com/macros/s/AKfycbyqiSF0p8CByeyg7atWH9dZGPC5Izi8Xn_LcY9Yrs9j6MS1a0agp0wJKkehH1cul9iD4Q/exec";
 
-
-let audioCtx, analyser, gainNode, correctFreq, qIdx = 0, totalErr = 0;
+let audioCtx, analyser, gainNode, dataArray, correctFreq, qIdx = 0, totalErr = 0;
 const totalQs = 3;
+let questionResults = [];
+let isPlaying = false;
+
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        gainNode = audioCtx.createGain();
+        gainNode.gain.value = document.getElementById("startVol").value;
+        analyser.connect(audioCtx.destination);
+        gainNode.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+    }
+}
+
+function updateVolume(val) {
+    if (gainNode) gainNode.gain.value = val;
+}
 
 function startGame() {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    analyser = audioCtx.createAnalyser();
-    gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0.5;
-    analyser.connect(audioCtx.destination);
-    gainNode.connect(analyser);
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     document.getElementById("startScreen").style.display = "none";
     document.getElementById("gameScreen").style.display = "block";
+    document.getElementById("volSlider").value = gainNode.gain.value;
+    drawAnalyzer();
     nextQ();
 }
 
@@ -84,17 +170,55 @@ function nextQ() {
         else {
             clearInterval(timer);
             ov.style.display = "none";
-            const osc = audioCtx.createOscillator();
-            osc.frequency.value = correctFreq;
-            osc.connect(gainNode);
-            osc.start();
-            setTimeout(() => osc.stop(), 1500);
+            playTone();
         }
     }, 1000);
 }
 
+function playTone() {
+    if (isPlaying) return;
+    isPlaying = true;
+    document.getElementById("replayBtn").disabled = true;
+    
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(correctFreq, audioCtx.currentTime);
+    osc.connect(gainNode);
+    osc.start();
+    setTimeout(() => { 
+        osc.stop(); 
+        osc.disconnect(); 
+        isPlaying = false;
+        document.getElementById("replayBtn").disabled = false;
+    }, 1500);
+}
+
+function drawAnalyzer() {
+    requestAnimationFrame(drawAnalyzer);
+    if (!analyser) return;
+    const canvas = document.getElementById("analyzer");
+    const ctx = canvas.getContext("2d");
+    analyser.getByteTimeDomainData(dataArray);
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2; ctx.strokeStyle = "#00d4ff";
+    ctx.beginPath();
+    const sliceWidth = canvas.width / dataArray.length;
+    let x = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        x += sliceWidth;
+    }
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
+}
+
 function submitAnswer() {
-    totalErr += Math.abs(document.getElementById("slider").value - correctFreq);
+    const userFreq = Number(document.getElementById("slider").value);
+    totalErr += Math.abs(userFreq - correctFreq);
+    questionResults.push({ correct: correctFreq, answer: userFreq });
     nextQ();
 }
 
@@ -103,38 +227,52 @@ function showResult() {
     document.getElementById("resultScreen").style.display = "block";
     const avg = Math.round(totalErr / totalQs);
     const name = document.getElementById("playerName").value || "ゲスト";
+    
+    let rank = "", rName = "", rClass = "";
+    if (avg < 50) { rank = "S"; rName = "神の耳"; rClass = "s-rank"; }
+    else if (avg < 150) { rank = "A"; rName = "プロ級"; rClass = "a-rank"; }
+    else if (avg < 350) { rank = "B"; rName = "セミプロ"; rClass = "b-rank"; }
+    else { rank = "C"; rName = "一般人"; rClass = "c-rank"; }
+
+    const rankEl = document.getElementById("rankText");
+    rankEl.innerText = `${rank} [${rName}]`;
+    rankEl.className = `rank-badge ${rClass}`;
     document.getElementById("resultText").innerText = `${name}さんの平均誤差: ${avg}Hz`;
 
-    // 自動送信 & 取得
+    drawResultGraph();
     updateRanking(name, avg);
+}
+
+function drawResultGraph() {
+    const canvas = document.getElementById("graph");
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const margin = 30, h = canvas.height - margin * 2, w = canvas.width - margin * 2;
+    questionResults.forEach((r, i) => {
+        const baseX = margin + i * (w / totalQs) + 20;
+        const h1 = (r.correct / 2200) * h;
+        ctx.fillStyle = "#ff4757"; ctx.fillRect(baseX, canvas.height - margin - h1, 15, h1);
+        const h2 = (r.answer / 2200) * h;
+        ctx.fillStyle = "#00d4ff"; ctx.fillRect(baseX + 15, canvas.height - margin - h2, 15, h2);
+        ctx.fillStyle = "#333"; ctx.fillText(`Q${i+1}`, baseX, canvas.height - 10);
+    });
 }
 
 async function updateRanking(name, score) {
     const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
-    
-    // 1. 送信 (POST)
-    await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({ name: name, score: score, mode: mode })
-    });
-
-    // 2. 取得 (GET)
-    const resp = await fetch(`${GAS_URL}?mode=${mode}`);
-    const data = await resp.json();
-    
-    const list = document.getElementById("rankingList");
-    list.innerHTML = data.map((r, i) => `
-        <div class="rank-item">
-            <span>${i+1}. ${r.name}</span>
-            <span>${Math.round(r.score)}Hz</span>
-        </div>
-    `).join('');
+    fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ name: name, score: score, mode: mode }) });
+    try {
+        const resp = await fetch(`${GAS_URL}?mode=${mode}`);
+        const data = await resp.json();
+        document.getElementById("rankingList").innerHTML = data.map((r, i) => `
+            <div class="rank-item"><span>${i+1}. ${r.name}</span><span>${Math.round(r.score)}Hz</span></div>
+        `).join('');
+    } catch(e) { document.getElementById("rankingList").innerText = "取得失敗"; }
 }
 
 function copyToClipboard() {
     const avg = Math.round(totalErr / totalQs);
-    const txt = `🎧 周波数当てゲーム\n平均誤差: ${avg}Hz\n${window.location.href}`;
+    const txt = `🎧 HEARING TEST PRO\nランク: ${document.getElementById('rankText').innerText}\n平均誤差: ${avg}Hz\n${window.location.href.split('?')[0]}`;
     navigator.clipboard.writeText(txt).then(() => alert("コピーしました！"));
 }
 </script>
