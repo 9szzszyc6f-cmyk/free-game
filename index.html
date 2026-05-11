@@ -350,36 +350,40 @@ function getRankInfo(score) {
 }
 
 async function updateRanking(name, score) {
-  const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
-  
-  fetch(GAS_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: JSON.stringify({ name: name, score: score, mode: mode })
-  });
+    const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
+    
+    // 1. まず送信を完了させる（awaitでしっかり待つ）
+    await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({ name: name, score: score, mode: mode })
+    });
 
-  try {
-    const resp = await fetch(`${GAS_URL}?mode=${mode}`);
-    const data = await resp.json();
-    const list = document.getElementById("rankingList");
-    
-    // 上位30位に制限して表示
-    const top30 = data.slice(0, 30);
-    
-    list.innerHTML = top30.map((r, i) => {
-      const info = getRankInfo(r.score);
-      return `
-        <div class="rank-item">
-          <span>${i+1}. ${r.name}</span>
-          <span class="${info.c}">${info.r} [${info.n}]</span>
-          <span>${Math.round(r.score)}Hz</span>
-        </div>
-      `;
-    }).join('');
-  } catch(e) {
-    document.getElementById("rankingList").innerText = "ランキングの取得に失敗しました。";
-  }
+    // 2. 少しだけ待つ（Google側の更新時間を稼ぐ）
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 3. 取得（URLに毎回違う数字を混ぜて、キャッシュを強制回避する）
+    try {
+        const cacheBuster = new Date().getTime();
+        const resp = await fetch(`${GAS_URL}?mode=${mode}&t=${cacheBuster}`);
+        const data = await resp.json();
+        
+        const list = document.getElementById("rankingList");
+        list.innerHTML = data.slice(0, 30).map((r, i) => {
+            const info = getRankInfo(r.score);
+            return `
+                <div class="rank-item">
+                    <span>${i+1}. ${r.name}</span>
+                    <span class="${info.c}">${info.r} [${info.n}]</span>
+                    <span>${Math.round(r.score)}Hz</span>
+                </div>
+            `;
+        }).join('');
+    } catch(e) {
+        document.getElementById("rankingList").innerText = "ランキングの更新に失敗しました。";
+    }
 }
+
 
 function copyToClipboard() {
   const name = document.getElementById("playerName").value || "名無し";
