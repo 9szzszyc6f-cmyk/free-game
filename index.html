@@ -121,9 +121,9 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
 /* ランキング表示用 */
 #rankingBox { margin-top: 25px; border-top: 2px solid #444; text-align: left; padding-top: 15px; }
 .rank-item { display: flex; justify-content: space-between; font-size: 12px; padding: 6px 0; border-bottom: 1px solid #333; align-items: center; }
-.rank-item span:nth-child(1) { width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } /* 名前の幅制限 */
-.rank-item span:nth-child(2) { flex-grow: 1; text-align: center; font-weight: bold; } /* ランクと称号 */
-.rank-item span:nth-child(3) { width: 60px; text-align: right; } /* スコア */
+.rank-item span:nth-child(1) { width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-item span:nth-child(2) { flex-grow: 1; text-align: center; font-weight: bold; }
+.rank-item span:nth-child(3) { width: 60px; text-align: right; }
 
 #countdownOverlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -132,6 +132,7 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
 }
 
 #copyStatus { font-size: 12px; color: var(--accent-green); height: 20px; margin-top: 5px; }
+.iphone-notice { font-size: 11px; color: var(--accent-red); margin-top: 10px; }
 </style>
 </head>
 
@@ -148,7 +149,8 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
     <input type="range" min="0" max="1" step="0.01" value="0.5" class="vol-slider" id="vol1" oninput="updateVolume(this.value)">
     <span class="vol-num" style="margin-top:5px; font-size:12px;">0.50</span>
   </div>
-  <br><br>
+  <br>
+  <p class="iphone-notice">⚠️ iPhoneの方は、マナーモードを解除し<br>音量を上げてから開始してください</p>
   <button onclick="startGame()">ゲーム開始</button>
 </div>
 
@@ -182,10 +184,9 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
 
   <canvas id="graph" width="600" height="350"></canvas>
 
-  <!-- ランキング表示エリア -->
   <div id="rankingBox">
     <h3 style="color:var(--accent-blue); font-size:16px; margin-bottom:10px;">🏆 世界ランキング (TOP 30)</h3>
-    <div id="rankingList" style="color:#bbb;">読み込み中...</div>
+    <div id="rankingList" style="color:#bbb; font-size:13px;">データ集計中...<br><span style="font-size:10px;">(反映まで数秒かかる場合があります)</span></div>
   </div>
   
   <table class="rank-table">
@@ -201,7 +202,8 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
 <div id="countdownOverlay">3</div>
 
 <script>
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzxC1rVTE4JxQhWeTza17ve-T2lchcDSrFV0llSsk6DxhTOTib_MJ_A7kjXbQISGg1I7A/exec";
+// --- GASのURLをここに貼り付けてください ---
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyqiSF0p8CByeyg7atWH9dZGPC5Izi8Xn_LcY9Yrs9j6MS1a0agp0wJKkehH1cul9iD4Q/exec";
 
 let audioCtx, analyser, gainNode, dataArray;
 let correctFreq = 0, questionIndex = 0, totalError = 0;
@@ -231,11 +233,6 @@ function initAudio() {
     analyser.fftSize = 2048;
     dataArray = new Uint8Array(analyser.frequencyBinCount);
   }
-  const buffer = audioCtx.createBuffer(1, 1, 22050);
-  const node = audioCtx.createBufferSource();
-  node.buffer = buffer;
-  node.connect(audioCtx.destination);
-  node.start(0);
 }
 
 function startGame() {
@@ -275,7 +272,9 @@ function startCountdown() {
 }
 
 function playTone() {
-  if (!audioCtx) return;
+  // iPhone対策: 再生直前にAudioContextを再開
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+
   const osc = audioCtx.createOscillator();
   osc.type = "sine"; 
   osc.frequency.value = correctFreq;
@@ -341,7 +340,6 @@ async function showResult() {
   updateRanking(name, avgError);
 }
 
-// ランク判定用関数
 function getRankInfo(score) {
   if (score < 50) return { r: "S", n: "神の耳", c: "s-rank" };
   if (score < 150) return { r: "A", n: "プロ級", c: "a-rank" };
@@ -352,17 +350,17 @@ function getRankInfo(score) {
 async function updateRanking(name, score) {
     const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
     
-    // 1. まず送信を完了させる（awaitでしっかり待つ）
+    // スコア送信（POST）
     await fetch(GAS_URL, {
         method: "POST",
         mode: "no-cors",
         body: JSON.stringify({ name: name, score: score, mode: mode })
     });
 
-    // 2. 少しだけ待つ（Google側の更新時間を稼ぐ）
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // 少し待機（反映を待つ）
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    // 3. 取得（URLに毎回違う数字を混ぜて、キャッシュを強制回避する）
+    // ランキング取得（GET / キャッシュ回避付き）
     try {
         const cacheBuster = new Date().getTime();
         const resp = await fetch(`${GAS_URL}?mode=${mode}&t=${cacheBuster}`);
@@ -380,10 +378,9 @@ async function updateRanking(name, score) {
             `;
         }).join('');
     } catch(e) {
-        document.getElementById("rankingList").innerText = "ランキングの更新に失敗しました。";
+        document.getElementById("rankingList").innerText = "ランキングの取得に失敗しました。";
     }
 }
-
 
 function copyToClipboard() {
   const name = document.getElementById("playerName").value || "名無し";
