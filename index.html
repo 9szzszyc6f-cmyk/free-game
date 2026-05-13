@@ -203,7 +203,7 @@ canvas#graph { background: #fff; border-radius: 8px; margin-top: 10px; width: 10
 
 <script>
 // --- GASのURLをここに貼り付けてください ---
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwgnaHM6q4TnnFK9K2PFZDwf8xg7oAc0Enj1ooLsxSikA48Uy2OEU3-iOATDZ6a-KZ3rA/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwc9bDtQ5lfiNlQ4qD1xprvPaufQtlqTVQuIAwkH25Q73jfDqgN1ZIcR-cXUC0V5_k49w/exec";
 
 let audioCtx, analyser, gainNode, dataArray;
 let correctFreq = 0, questionIndex = 0, totalError = 0;
@@ -348,40 +348,27 @@ function getRankInfo(score) {
 }
 
 async function updateRanking(name, score) {
-    const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
-    
-    // スコア送信（POST）
-    await fetch(GAS_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({ name: name, score: score, mode: mode })
+  const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
+  try {
+    const resp = await fetch(GAS_URL, {
+      method: "POST",
+      body: JSON.stringify({ name, score, mode })
     });
+    const data = await resp.json();
 
-    // 少し待機（反映を待つ）
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // ランキング取得（GET / キャッシュ回避付き）
-    try {
-        const cacheBuster = new Date().getTime();
-        const resp = await fetch(`${GAS_URL}?mode=${mode}&t=${cacheBuster}`);
-        const data = await resp.json();
-        
-        const list = document.getElementById("rankingList");
-        list.innerHTML = data.slice(0, 30).map((r, i) => {
-            const info = getRankInfo(r.score);
-            return `
-                <div class="rank-item">
-                    <span>${i+1}. ${r.name}</span>
-                    <span class="${info.c}">${info.r} [${info.n}]</span>
-                    <span>${Math.round(r.score)}Hz</span>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        document.getElementById("rankingList").innerText = "ランキングの取得に失敗しました。";
-    }
+    const list = document.getElementById("rankingList");
+    list.innerHTML = data.slice(0, 30).map((r, i) => {
+      const info = getRankInfo(r.score);
+      return `<div class="rank-item">
+        <span>${i+1}. ${r.name}</span>
+        <span class="${info.c}">${info.r} [${info.n}]</span>
+        <span>${Math.round(r.score)}Hz</span>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById("rankingList").innerText = "ランキングの取得に失敗しました。";
+  }
 }
-
 function copyToClipboard() {
   const name = document.getElementById("playerName").value || "名無し";
   const avgError = Math.round(totalError / totalQuestions);
