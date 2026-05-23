@@ -349,14 +349,28 @@ function getRankInfo(score) {
 
 async function updateRanking(name, score) {
   const mode = new URLSearchParams(window.location.search).get('mode') || "Spoon";
+  const list = document.getElementById("rankingList");
+  list.innerHTML = "ランキング更新中...";
+
   try {
-    const resp = await fetch(GAS_URL, {
+    // まずスコア送信
+    await fetch(GAS_URL, {
       method: "POST",
+      mode: "no-cors",
       body: JSON.stringify({ name, score, mode })
     });
+
+    // 書き込み反映待ち
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // 次にランキング取得
+    const resp = await fetch(`${GAS_URL}?mode=${encodeURIComponent(mode)}&t=${Date.now()}`);
     const data = await resp.json();
 
-    const list = document.getElementById("rankingList");
+    if (!Array.isArray(data)) {
+      throw new Error("ランキングデータが配列ではありません");
+    }
+
     list.innerHTML = data.slice(0, 30).map((r, i) => {
       const info = getRankInfo(r.score);
       return `<div class="rank-item">
@@ -365,8 +379,10 @@ async function updateRanking(name, score) {
         <span>${Math.round(r.score)}Hz</span>
       </div>`;
     }).join('');
+
   } catch(e) {
-    document.getElementById("rankingList").innerText = "ランキングの取得に失敗しました。";
+    list.innerText = "ランキングの取得に失敗しました。";
+    console.log(e);
   }
 }
 function copyToClipboard() {
