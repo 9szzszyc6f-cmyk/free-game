@@ -1,1 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ドア閉じ音 格付けチェック</title>
 
+<style>
+:root {
+  --bg: #1a1a1a;
+  --panel: #2d2d2d;
+  --blue: #00d4ff;
+  --red: #ff4757;
+  --green: #2ed573;
+  --text: #e0e0e0;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: sans-serif;
+  text-align: center;
+}
+
+.screen {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--panel);
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 22px;
+  margin: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  background: var(--blue);
+  color: #111;
+}
+
+select, input {
+  width: 90%;
+  padding: 12px;
+  margin: 8px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
+
+.sound-row {
+  background: #222;
+  padding: 14px;
+  margin: 12px 0;
+  border-radius: 12px;
+}
+
+.result-card {
+  background: #222;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.correct { color: var(--green); font-weight: bold; }
+.wrong { color: var(--red); font-weight: bold; }
+
+#rankingBox {
+  margin-top: 25px;
+  border-top: 1px solid #444;
+  padding-top: 15px;
+  text-align: left;
+}
+
+.rank-item {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #333;
+  padding: 7px 0;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🚗 ドア閉じ音 格付けチェック</h1>
+
+<div id="startScreen" class="screen">
+  <p>名前を入力してください</p>
+  <input id="playerName" placeholder="名前" maxlength="10">
+
+  <h3>コース選択</h3>
+  <button onclick="startGame('A')">Aコース</button>
+  <button onclick="startGame('B')">Bコース</button>
+
+  <p style="font-size:13px;color:#aaa;">
+    音を聴いて、それぞれの車両価格を当てよう！
+  </p>
+</div>
+
+<div id="gameScreen" class="screen" style="display:none;">
+  <h2 id="courseTitle"></h2>
+  <p>各音源を聴いて、価格を選んでください</p>
+
+  <div id="soundList"></div>
+
+  <button onclick="submitAnswers()" style="background:var(--green);">回答する</button>
+</div>
+
+<div id="resultScreen" class="screen" style="display:none;">
+  <h2>結果発表！</h2>
+  <h3 id="scoreText"></h3>
+  <div id="resultList"></div>
+
+  <button onclick="copyResult()" style="background:#e67e22;color:white;">結果をコピー</button>
+  <button onclick="location.reload()" style="background:#555;color:white;">もう一度</button>
+
+  <div id="rankingBox">
+    <h3 style="color:var(--blue);">🏆 RANKING</h3>
+    <div id="rankingList">読み込み中...</div>
+  </div>
+</div>
+
+<script>
+const GAS_URL = "ここにGASのURLを貼る";
+
+const courses = {
+  A: {
+    title: "Aコース",
+    sheet: "DoorA",
+    sounds: [
+      { label: "A", file: "sounds/twingo.mp3", price: 270 },
+      { label: "B", file: "sounds/ruukusu.mp3", price: 180 },
+      { label: "C", file: "sounds/aria.mp3", price: 737 }
+    ]
+  },
+  B: {
+    title: "Bコース",
+    sheet: "DoorB",
+    sounds: [
+      { label: "A", file: "sounds/note_aura.mp3", price: 320 },
+      { label: "B", file: "sounds/kicks.mp3", price: 340 },
+      { label: "C", file: "sounds/Skyline.mp3", price: 620 }
+    ]
+  }
+};
+
+let currentCourseKey = "";
+let currentCourse = null;
+let priceOptions = [];
+let audio = null;
+let finalScore = 0;
+let finalResults = [];
+
+function startGame(courseKey) {
+  currentCourseKey = courseKey;
+  currentCourse = courses[courseKey];
+
+  document.getElementById("startScreen").style.display = "none";
+  document.getElementById("gameScreen").style.display = "block";
+  document.getElementById("courseTitle").innerText = currentCourse.title;
+
+  priceOptions = currentCourse.sounds.map(s => s.price);
+  priceOptions = shuffle(priceOptions);
+
+  renderSoundList();
+}
+
+function renderSoundList() {
+  const box = document.getElementById("soundList");
+  box.innerHTML = "";
+
+  currentCourse.sounds.forEach((s, i) => {
+    const optionsHtml = priceOptions.map(p =>
+      `<option value="${p}">${p}万円</option>`
+    ).join("");
+
+    box.innerHTML += `
+      <div class="sound-row">
+        <h3>音源 ${s.label}</h3>
+        <button onclick="playSound('${s.file}')">▶ 聴く</button>
+        <br>
+        <select id="answer_${i}">
+          <option value="">価格を選択</option>
+          ${optionsHtml}
+        </select>
+      </div>
+    `;
+  });
+}
+
+function playSound(file) {
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+  audio = new Audio(file);
+  audio.play();
+}
+
+function submitAnswers() {
+  let score = 0;
+  finalResults = [];
+
+  currentCourse.sounds.forEach((s, i) => {
+    const userAnswer = Number(document.getElementById(`answer_${i}`).value);
+    const isCorrect = userAnswer === s.price;
+
+    if (isCorrect) score++;
+
+    finalResults.push({
+      label: s.label,
+      correct: s.price,
+      answer: userAnswer,
+      isCorrect
+    });
+  });
+
+  finalScore = score;
+  showResult();
+}
+
+function showResult() {
+  document.getElementById("gameScreen").style.display = "none";
+  document.getElementById("resultScreen").style.display = "block";
+
+  const total = currentCourse.sounds.length;
+  const name = document.getElementById("playerName").value || "ゲスト";
+
+  document.getElementById("scoreText").innerText =
+    `${name}さん：${total}問中 ${finalScore}問 正解！`;
+
+  const list = document.getElementById("resultList");
+  list.innerHTML = "";
+
+  finalResults.forEach(r => {
+    list.innerHTML += `
+      <div class="result-card">
+        <h3>音源 ${r.label}：${r.isCorrect ? '<span class="correct">正解！</span>' : '<span class="wrong">不正解</span>'}</h3>
+        <p>あなたの回答：${r.answer ? r.answer + "万円" : "未回答"}</p>
+        <p>正解：${r.correct}万円</p>
+      </div>
+    `;
+  });
+
+  updateRanking(name, finalScore);
+}
+
+async function updateRanking(name, score) {
+  const list = document.getElementById("rankingList");
+  list.innerHTML = "ランキング更新中...";
+
+  const mode = currentCourse.sheet;
+
+  try {
+    await fetch(GAS_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ name, score, mode })
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const resp = await fetch(`${GAS_URL}?mode=${encodeURIComponent(mode)}&t=${Date.now()}`);
+    const data = await resp.json();
+
+    if (!Array.isArray(data)) throw new Error("ランキング形式エラー");
+
+    list.innerHTML = data.slice(0, 20).map((r, i) => `
+      <div class="rank-item">
+        <span>${i+1}. ${r.name}</span>
+        <span>${Math.round(r.score)}問正解</span>
+      </div>
+    `).join("");
+
+  } catch(e) {
+    list.innerText = "ランキングの取得に失敗しました。";
+  }
+}
+
+function copyResult() {
+  const name = document.getElementById("playerName").value || "ゲスト";
+  const total = currentCourse.sounds.length;
+
+  let text = `🚗 ドア閉じ音 格付けチェック\n`;
+  text += `${currentCourse.title}\n`;
+  text += `${name}さん：${total}問中 ${finalScore}問 正解！\n`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    alert("コピーしました！");
+  });
+}
+
+function shuffle(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+</script>
+
+</body>
+</html>
