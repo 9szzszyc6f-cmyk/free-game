@@ -96,8 +96,8 @@ select, input {
   <input id="playerName" placeholder="名前" maxlength="10">
 
   <h3>コース選択</h3>
-  <button onclick="startGame('A')">Aコース</button>
-  <button onclick="startGame('B')">Bコース</button>
+  <button onclick="startGame('A')">初級コース</button>
+  <button onclick="startGame('B')">上級コース</button>
 
   <p style="font-size:13px;color:#aaa;">
     音を聴いて、それぞれの車両価格を当てよう！
@@ -132,17 +132,16 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzkHCzufp41Rnrae5t7dJDM
 
 const courses = {
   A: {
-  title: "Aコース",
+  title: "初級コース",
   sheet: "DoorA",
   sounds: [
     { label: "A", file: "sounds/ruukusu.mp3", price: 180 },
-    { label: "B", file: "sounds/twingo.mp3", price: 270 },
-    { label: "C", file: "sounds/a_class.mp3", price: 650 },
-    { label: "D", file: "sounds/gls.mp3", price: 1570 }
+    { label: "B", file: "sounds/a_class.mp3", price: 650 },
+    { label: "C", file: "sounds/gls.mp3", price: 1570 }
   ]
 },
 B: {
-  title: "Bコース",
+  title: "上級コース",
   sheet: "DoorB",
   sounds: [
     { label: "A", file: "sounds/kicks.mp3", price: 340 },
