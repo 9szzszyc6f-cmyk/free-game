@@ -216,6 +216,7 @@ function submitAnswers() {
 
     finalResults.push({
       label: s.label,
+      file: s.file,
       correct: s.price,
       answer: userAnswer,
       isCorrect
@@ -240,14 +241,15 @@ function showResult() {
   list.innerHTML = "";
 
   finalResults.forEach(r => {
-    list.innerHTML += `
-      <div class="result-card">
-        <h3>音源 ${r.label}：${r.isCorrect ? '<span class="correct">正解！</span>' : '<span class="wrong">不正解</span>'}</h3>
-        <p>あなたの回答：${r.answer ? r.answer + "万円" : "未回答"}</p>
-        <p>正解：${r.correct}万円</p>
-      </div>
-    `;
-  });
+　  list.innerHTML += `
+ 　   <div class="result-card">
+  　    <h3>音源 ${r.label}：${r.isCorrect ? '<span class="correct">正解！</span>' : '<span class="wrong">不正解</span>'}</h3>
+   　   <button onclick="playSound('${r.file}')">▶ もう一度聴く</button>
+    　  <p>あなたの回答：${r.answer ? r.answer + "万円" : "未回答"}</p>
+     　 <p>正解：${r.correct}万円</p>
+  　  </div>
+  `;
+});
 
   updateRanking(name, finalScore);
 }
