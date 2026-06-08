@@ -132,24 +132,24 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzkHCzufp41Rnrae5t7dJDM
 
 const courses = {
   A: {
-  title: "初級コース",
-  sheet: "DoorA",
-  sounds: [
-    { label: “A”, file: "sounds/a_class.mp3", price: 650 },
-    { label: “B”, file: "sounds/ruukusu.mp3", price: 180 },
-    { label: "C", file: "sounds/gls.mp3", price: 2150 }
-  ]
-},
-B: {
-  title: "上級コース",
-  sheet: "DoorB",
-  sounds: [
-    { label: “A”, file: "sounds/gla.mp3", price: 910 },
-    { label: “B”, file: "sounds/glc.mp3", price: 1100 },
-    { label: “C”, file: "sounds/kicks.mp3", price: 340 },
-    { label: “D”, file: "sounds/aria.mp3", price: 737 }
-  ]
-}
+    title: "初級コース",
+    sheet: "DoorA",
+    sounds: [
+      { label: "A", file: "sounds/a_class.mp3", price: 650 },
+      { label: "B", file: "sounds/ruukusu.mp3", price: 180 },
+      { label: "C", file: "sounds/gls.mp3", price: 2150 }
+    ]
+  },
+  B: {
+    title: "上級コース",
+    sheet: "DoorB",
+    sounds: [
+      { label: "A", file: "sounds/gla.mp3", price: 910 },
+      { label: "B", file: "sounds/glc.mp3", price: 1100 },
+      { label: "C", file: "sounds/kicks.mp3", price: 340 },
+      { label: "D", file: "sounds/aria.mp3", price: 737 }
+    ]
+  }
 };
 
 let currentCourseKey = "";
@@ -201,6 +201,7 @@ function playSound(file) {
     audio.pause();
     audio.currentTime = 0;
   }
+
   audio = new Audio(file);
   audio.play();
 }
@@ -242,15 +243,15 @@ function showResult() {
   list.innerHTML = "";
 
   finalResults.forEach(r => {
-　  list.innerHTML += `
- 　   <div class="result-card">
-  　    <h3>音源 ${r.label}：${r.isCorrect ? '<span class="correct">正解！</span>' : '<span class="wrong">不正解</span>'}</h3>
-   　   <button onclick="playSound('${r.file}')">▶ もう一度聴く</button>
-    　  <p>あなたの回答：${r.answer ? r.answer + "万円" : "未回答"}</p>
-     　 <p>正解：${r.correct}万円</p>
-  　  </div>
-  `;
-});
+    list.innerHTML += `
+      <div class="result-card">
+        <h3>音源 ${r.label}：${r.isCorrect ? '<span class="correct">正解！</span>' : '<span class="wrong">不正解</span>'}</h3>
+        <button onclick="playSound('${r.file}')">▶ もう一度聴く</button>
+        <p>あなたの回答：${r.answer ? r.answer + "万円" : "未回答"}</p>
+        <p>正解：${r.correct}万円</p>
+      </div>
+    `;
+  });
 
   updateRanking(name, finalScore);
 }
