@@ -132,23 +132,25 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbzkHCzufp41Rnrae5t7dJDM
 
 const courses = {
   A: {
-    title: "Aコース",
-    sheet: "DoorA",
-    sounds: [
-      { label: "A", file: "sounds/twingo.mp3", price: 270 },
-      { label: "B", file: "sounds/ruukusu.mp3", price: 180 },
-      { label: "C", file: "sounds/aria.mp3", price: 737 }
-    ]
-  },
-  B: {
-    title: "Bコース",
-    sheet: "DoorB",
-    sounds: [
-      { label: "A", file: "sounds/note_aura.mp3", price: 320 },
-      { label: "B", file: "sounds/kicks.mp3", price: 340 },
-      { label: "C", file: "sounds/Skyline.mp3", price: 620 }
-    ]
-  }
+  title: "Aコース",
+  sheet: "DoorA",
+  sounds: [
+    { label: "A", file: "sounds/ruukusu.mp3", price: 180 },
+    { label: "B", file: "sounds/twingo.mp3", price: 270 },
+    { label: "C", file: "sounds/a_class.mp3", price: 650 },
+    { label: "D", file: "sounds/gls.mp3", price: 1570 }
+  ]
+},
+B: {
+  title: "Bコース",
+  sheet: "DoorB",
+  sounds: [
+    { label: "A", file: "sounds/kicks.mp3", price: 340 },
+    { label: "B", file: "sounds/aria.mp3", price: 737 },
+    { label: "C", file: "sounds/gla.mp3", price: 910 },
+    { label: "D", file: "sounds/glc.mp3", price: 1100 }
+  ]
+}
 };
 
 let currentCourseKey = "";
