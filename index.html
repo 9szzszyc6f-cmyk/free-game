@@ -371,7 +371,7 @@ async function updateRanking(name, score) {
       throw new Error("ランキングデータが配列ではありません");
     }
 
-    list.innerHTML = data.slice(0, 30).map((r, i) => {
+    list.innerHTML = data.slice(0, 100).map((r, i) => {
       const info = getRankInfo(r.score);
       return `<div class="rank-item">
         <span>${i+1}. ${r.name}</span>
